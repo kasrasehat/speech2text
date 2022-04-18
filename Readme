@@ -1,0 +1,1 @@
+in speech_recognizer we used S2T-LARGE-LIBRISPEECH-ASR model from this url: https://huggingface.co/facebook/s2t-large-librispeech-asr
