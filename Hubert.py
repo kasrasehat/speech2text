@@ -12,7 +12,7 @@ processor = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
 model = HubertModel.from_pretrained("facebook/hubert-large-ls960-ft")
 
 # load dummy dataset and read soundfiles
-path = 'ALPRAZOLAM.wav'
+path = 'voice/ACETAMINOPHEN.wav'
 speech, _ = librosa.load(path, sr = 16000)
 
 # tokenize

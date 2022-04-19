@@ -9,7 +9,7 @@ processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
 model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
 
 # load dummy dataset and read soundfiles
-path = 'ALPRAZOLAM.wav'
+path = 'voice/ENOXAPARIN.wav'
 speech, _ = librosa.load(path, sr = 16000)
 
 # tokenize

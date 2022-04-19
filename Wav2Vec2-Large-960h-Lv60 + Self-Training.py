@@ -9,11 +9,11 @@ processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-large-960h-lv60
 model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
 
 # load dummy dataset and read soundfiles
-path = 'ENOXAPARIN.wav'
+path = 'voice/ENOXAPARIN.wav'
 speech, _ = librosa.load(path, sr = 16000)
 
 # tokenize
-input_values = processor(speech, sampling_rate=16_000,return_tensors="pt", padding="longest").input_values  # Batch size 1
+input_values = processor(speech, sampling_rate=16_000, return_tensors="pt", padding="longest").input_values  # Batch size 1
 
 # retrieve logits
 logits = model(input_values).logits
