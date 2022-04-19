@@ -1,6 +1,5 @@
 import torch
 from transformers import Speech2TextProcessor, Speech2TextForConditionalGeneration
-from datasets import load_dataset
 import soundfile as sf
 import librosa
 
