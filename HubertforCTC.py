@@ -1,6 +1,8 @@
 from transformers import Wav2Vec2Processor, HubertForCTC
 import torch
 import librosa
+import os
+import pandas as pd
 
 processor = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
 model = HubertForCTC.from_pretrained("facebook/hubert-large-ls960-ft")
