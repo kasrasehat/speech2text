@@ -19,7 +19,5 @@ with torch.no_grad():
 predicted_ids = torch.argmax(logits, dim=-1)
 
 # transcribe speech
-
 transcription = processor.batch_decode(predicted_ids)
-
 transcription[0]
