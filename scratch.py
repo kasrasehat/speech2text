@@ -11,6 +11,8 @@ import pickle
 import pydub
 import tqdm
 import numpy as np
+import gc
+
 
 def read(f, normalized=False):
     """MP3 to numpy array"""
@@ -35,7 +37,7 @@ model.train()
 with open("speech2text/pharmacy6.pickle", 'rb') as output:
   data = pickle.load(output)
 
-batch_size = 64
+batch_size = 8
 p = 0
 loss_tot = 0
 epoch = 1
@@ -76,8 +78,9 @@ for i in range(epoch):
             else: continue
 
 
-            input_values = processor(speech, sampling_rate=_, return_tensors="pt").input_values
-            logits = model(input_values).logits
+            input_values = processor(speech, sampling_rate=16000, return_tensors="pt")
+            with torch.no_grad():
+                logits = model(**input_values).logits
             predicted_ids = torch.argmax(logits, dim=-1)
             transcription = processor.decode(predicted_ids[0])
             transcription = transcription.lower()
@@ -85,10 +88,10 @@ for i in range(epoch):
 
         # encode labels
             with processor.as_target_processor():
-              labels = processor(target_transcription, return_tensors="pt").input_ids
+              input_values['labels'] = processor(target_transcription, return_tensors="pt").input_ids
 
         # compute loss by passing labels
-            loss = model(input_values, labels=labels).loss
+            loss = model(**input_values).loss
             loss_tot += loss
 
             if p == batch_size:
@@ -104,6 +107,8 @@ for i in range(epoch):
                 if t % 10 == 1:
                     filename = 'E:/codes_py/speech2text/saved_models/model_epoch_{}_progress_{}'.format(epoch, t)
                     torch.save(model.state_dict(), filename)
+
+                
 
 
 
