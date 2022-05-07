@@ -20,4 +20,5 @@ predicted_ids = torch.argmax(logits, dim=-1)
 
 # transcribe speech
 transcription = processor.batch_decode(predicted_ids)
-transcription[0]
+print(transcription[0])
+print(" ".join(processor.tokenizer.convert_ids_to_tokens(predicted_ids[0].tolist())))

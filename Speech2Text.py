@@ -23,6 +23,15 @@ class s2t():
         self.model5 = Wav2Vec2ForCTC.from_pretrained("voidful/wav2vec2-xlsr-multilingual-56")
         self.processor5 = Wav2Vec2Processor.from_pretrained("voidful/wav2vec2-xlsr-multilingual-56")
 
+        self.model6 = HubertForCTC.from_pretrained("facebook/hubert-large-ls960-ft")
+        self.processor6 = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
+
+        myload = torch.load("saved_models/hubert_epoch_15")
+        try:
+            self.model6.load_state_dict(myload['state_dict'])
+        except:
+            self.model6.load_state_dict(myload)
+
 
     def HUBERT(self, speech):
 
@@ -66,14 +75,18 @@ class s2t():
 
 
     def xlsr_multilingual_56(self, speech, lang_code):
+
         features = self.processor5(speech, sampling_rate=16_000, padding=True, return_tensors="pt")
         input_values = features.input_values
         attention_mask = features.attention_mask
+
         with open("lang_ids.pk", 'rb') as output:
             lang_ids = pickle.load(output)
+
         with torch.no_grad():
             logits = self.model5(input_values, attention_mask=attention_mask).logits
             decoded_results = []
+
             for logit in logits:
                 pred_ids = torch.argmax(logit, dim=-1)
                 mask = ~pred_ids.eq(self.processor5.tokenizer.pad_token_id).unsqueeze(-1).expand(logit.size())
@@ -81,6 +94,7 @@ class s2t():
                 voice_prob = torch.nn.functional.softmax((torch.masked_select(logit, mask).view(-1, vocab_size)),
                                                          dim=-1)
                 filtered_input = pred_ids[pred_ids != self.processor5.tokenizer.pad_token_id].view(1, -1)
+
                 if len(filtered_input[0]) == 0:
                     decoded_results.append("")
                 else:
@@ -92,6 +106,19 @@ class s2t():
                     decoded_results.append(self.processor5.decode(comb_pred_ids))
 
         return decoded_results[0]
+
+
+    def fine_tuned_HUBERT(self, speech):
+
+        inputs = self.processor6(speech, sampling_rate=16000, return_tensors="pt")
+        with torch.no_grad():
+           logits = self.model6(**inputs).logits
+
+        predicted_ids = torch.argmax(logits, dim=-1)
+        transcription = self.processor6.batch_decode(predicted_ids)
+        return transcription[0]
+
+
 
 
 
