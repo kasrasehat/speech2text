@@ -61,11 +61,11 @@ def train(args, model, device, train_loader, optimizer, epoch, train_data):
 def main():
     # argparse = argparse.parse_args()
     parser = argparse.ArgumentParser(description='PyTorch finance EURUSD')
-    parser.add_argument('--batch-size', type=int, default=16, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=32, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--valid-batch-size', type=int, default=2000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=15, metavar='N',
+    parser.add_argument('--epochs', type=int, default=45, metavar='N',
                         help='number of epochs to train (default: 14)')
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 1.0)')
@@ -108,7 +108,7 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=4e-4)
     # weight_decay = 4e-4
 
-    scheduler = StepLR(optimizer, step_size=3, gamma=args.gamma)
+    scheduler = StepLR(optimizer, step_size=6, gamma=args.gamma)
 
     if args.weight:
         if os.path.isfile(args.weight):
