@@ -84,33 +84,33 @@ class prepare_data():
 
             #for langu in gtts.lang.tts_langs().keys():
             #gtts.lang.tts_langs().keys()
-            for langu in ['af', 'ar','fr']:
+            #for langu in ['af', 'ar','fr']:
 
-                l = min(len(drug),200)
-                print(langu)
-                try:
-                    tts = gtts.gTTS(drug[:l], lang=langu)
-                    tts.save("voice/temporary.mp3")
-                except:
-                    n_used_langs.append(langu)
-                    continue
+                #l = min(len(drug),200)
+                #print(langu)
+                #try:
+                   # tts = gtts.gTTS(drug[:l], lang=langu)
+                   # tts.save("voice/temporary.mp3")
+                #except:
+                   # n_used_langs.append(langu)
+                   # continue
 
-                _, speech = self.read("voice/temporary.mp3", normalized=True)
-                os.remove("voice/temporary.mp3")
+               # _, speech = self.read("voice/temporary.mp3", normalized=True)
+                #os.remove("voice/temporary.mp3")
 
-                input_values = self.processor(speech, sampling_rate=_, return_tensors="pt")
+                #input_values = self.processor(speech, sampling_rate=_, return_tensors="pt")
                 #with torch.no_grad():
                     #logits = self.model(**input_values).logits
                 #predicted_ids = torch.argmax(logits, dim=-1)
                 #transcription = self.processor.decode(predicted_ids[0])
                 #transcription = transcription.upper()
-                target_transcription = drug.upper()
+                #target_transcription = drug.upper()
 
                 # encode labels
-                with self.processor.as_target_processor():
-                    input_values['labels'] = self.processor(target_transcription, return_tensors="pt").input_ids
+                #with self.processor.as_target_processor():
+                   # input_values['labels'] = self.processor(target_transcription, return_tensors="pt").input_ids
 
                 # loss = self.model(**input_values).loss
-                x_train.append(input_values)
+                #x_train.append(input_values)
 
         return x_train, bug

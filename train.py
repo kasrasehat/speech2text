@@ -10,7 +10,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC, HubertForCTC
 from torch.optim.lr_scheduler import StepLR
 import torch
-
+from sklearn.model_selection import train_test_split
 import numpy as np
 #torch.cuda.empty_cache()
 
@@ -19,7 +19,7 @@ import numpy as np
 # test data is extracted in this section
 # in this section data normalized with min_max method
 
-def train(args, model, device, train_loader, optimizer, epoch, train_data):
+def train(args, model, device, train_loader, optimizer, epoch, input_data):
 
     model.train()
     model.freeze_feature_encoder()
@@ -32,7 +32,7 @@ def train(args, model, device, train_loader, optimizer, epoch, train_data):
         loss_tot = 0
         for i in range(len(data)):
 
-            input_values = train_data[int(data[i])].to(device)
+            input_values = input_data[int(data[i])].to(device)
             loss = model(**input_values).loss
             batch_loss += loss
 
@@ -45,24 +45,52 @@ def train(args, model, device, train_loader, optimizer, epoch, train_data):
         batch_loss = 0
 
         if batch_idx % args.log_interval == 1 :
+
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, (batch_idx+1) * len(data), len(train_loader.dataset),
                        100. * (batch_idx+1) / len(train_loader),
                        tot_loss / ((batch_idx + 1) * len(data))))
-            filename = 'E:/codes_py/speech2text/saved_models/acoustic_model_epoch_{}_progress_{}%'.format(epoch, 100. * np.ceil(batch_idx+1) / len(train_loader))
-            #torch.save(model.state_dict(), filename)
 
     print('Epoch: {}\tLoss: {:.6f}'.format(epoch, tot_loss / (len(train_loader.dataset))))
-    filename = 'E:/codes_py/speech2text/saved_models/acoustic_hubert_epoch_{}'.format(epoch)
-    if epoch % 3 == 0:
-        torch.save(model.state_dict(), filename)
+    return None
 
-    return tot_loss / (len(train_loader.dataset))
+def evaluation(args, model, device, test_loader, optimizer, val_loss_min, epoch, input_data):
+
+    model.eval()
+    val_loss = 0
+    with torch.no_grad():
+
+        for batch_idx, (data, target) in enumerate(test_loader):
+
+            data, target = data, target
+            for i in range(len(data)):
+
+                input_values = input_data[int(data[i])].to(device)
+                loss = model(**input_values).loss
+                val_loss += loss.item()
+
+
+    val_loss = val_loss/len(test_loader.dataset)
+    print('\nValidation loss: {:.6f}\n'.format(val_loss))
+    # save model if validation loss has decreased
+    if val_loss < val_loss_min :
+
+        if args.save_model:
+
+            #filename = 'model_epock_{0}_val_loss_{1}.pt'.format(epoch, val_loss)
+            #torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, filename)
+            filename = 'E:/codes_py/speech2text/saved_models/hubert_epoch_{}'.format(epoch)
+            torch.save(model.state_dict(),filename)
+            val_loss_min = val_loss
+        return val_loss_min
+
+    else:
+        return None
 
 
 def main():
     # argparse = argparse.parse_args()
-    parser = argparse.ArgumentParser(description='PyTorch finance EURUSD')
+    parser = argparse.ArgumentParser(description='PyTorch speech2text')
     parser.add_argument('--batch-size', type=int, default=8, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--valid-batch-size', type=int, default=2000, metavar='N',
@@ -137,24 +165,32 @@ def main():
 
 
     a1 = prepare_data()
-    train_data, bug = a1.prep_data(
-        path = "speech2text/pharmacy6.pickle")
+    input_data, bug = a1.prep_data(
+        path="speech2text/pharmacy6.pickle")
 
     indices = []
-    for i in range(len(train_data)):
+    for i in range(len(input_data)):
         indices.append(i)
 
+    x_train, x_test, y_train, y_test = train_test_split(indices, indices, test_size=0.15, shuffle=True)
 
-    ##train_data = train_data2
-    tensor_x = torch.Tensor(indices)  # transform to torch tensor
-    tensor_y = torch.Tensor(indices)
+    tensor_x = torch.Tensor(x_train)  # transform to torch tensor
+    tensor_y = torch.Tensor(x_train)
     train_dataset = TensorDataset(tensor_x, tensor_y)  # create your datset
     train_loader = DataLoader(train_dataset, **kwargs_train)  # create your dataloader
 
+    tensor_x = torch.Tensor(x_test)  # transform to torch tensor
+    tensor_y = torch.Tensor(x_test)
+    test_dataset = TensorDataset(tensor_x, tensor_y)  # create your datset
+    test_loader = DataLoader(test_dataset, **kwargs_train)  # create your dataloader
+
     val_loss_min = np.Inf
     for epoch in range(1, args.epochs + 1):
-        train(args, model, device, train_loader, optimizer, epoch, train_data=train_data)
+        train(args, model, device, train_loader, optimizer, epoch, input_data=input_data)
         scheduler.step()
+        out_loss = evaluation(args, model, device, test_loader, optimizer, val_loss_min, epoch, input_data=input_data)
+        if out_loss is not None:
+            val_loss_min = out_loss
 
 
 
