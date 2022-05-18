@@ -14,7 +14,7 @@ def compare(word, dataset):
     return list(dataset1['drug'][0:5]), list(dataset1['drug'][0:4]), list(dataset1['drug'][0:3]), list(dataset1['drug'][0:2]), list(dataset1['drug'][0:1])
 
 
-data = pd.read_csv('final_file.csv')
+data = pd.read_csv('final_file200.csv')
 data1 = data.copy()
 data['score'] = pd.Series(np.nan, index=data.index, dtype=int)
 tot = 0

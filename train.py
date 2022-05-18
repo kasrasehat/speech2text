@@ -12,6 +12,7 @@ from torch.optim.lr_scheduler import StepLR
 import torch
 
 import numpy as np
+#torch.cuda.empty_cache()
 
 
 # main
@@ -27,11 +28,11 @@ def train(args, model, device, train_loader, optimizer, epoch, train_data):
     tot_loss = 0
     for batch_idx, (data, target) in enumerate(train_loader):
 
-        data, target = data.to(device), target.to(device)
+        data, target = data, target
         loss_tot = 0
         for i in range(len(data)):
 
-            input_values = train_data[int(data[i])]
+            input_values = train_data[int(data[i])].to(device)
             loss = model(**input_values).loss
             batch_loss += loss
 
@@ -48,12 +49,13 @@ def train(args, model, device, train_loader, optimizer, epoch, train_data):
                 epoch, (batch_idx+1) * len(data), len(train_loader.dataset),
                        100. * (batch_idx+1) / len(train_loader),
                        tot_loss / ((batch_idx + 1) * len(data))))
-            filename = 'E:/codes_py/speech2text/saved_models/model_epoch_{}_progress_{}%'.format(epoch, 100. * np.ceil(batch_idx+1) / len(train_loader))
-            torch.save(model.state_dict(), filename)
+            filename = 'E:/codes_py/speech2text/saved_models/acoustic_model_epoch_{}_progress_{}%'.format(epoch, 100. * np.ceil(batch_idx+1) / len(train_loader))
+            #torch.save(model.state_dict(), filename)
 
     print('Epoch: {}\tLoss: {:.6f}'.format(epoch, tot_loss / (len(train_loader.dataset))))
-    filename = 'E:/codes_py/speech2text/saved_models/hubert_epoch_{}'.format(epoch)
-    torch.save(model.state_dict(), filename)
+    filename = 'E:/codes_py/speech2text/saved_models/acoustic_hubert_epoch_{}'.format(epoch)
+    if epoch % 3 == 0:
+        torch.save(model.state_dict(), filename)
 
     return tot_loss / (len(train_loader.dataset))
 
@@ -61,21 +63,21 @@ def train(args, model, device, train_loader, optimizer, epoch, train_data):
 def main():
     # argparse = argparse.parse_args()
     parser = argparse.ArgumentParser(description='PyTorch finance EURUSD')
-    parser.add_argument('--batch-size', type=int, default=32, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=8, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--valid-batch-size', type=int, default=2000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=45, metavar='N',
+    parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 14)')
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 1.0)')
-    parser.add_argument('--gamma', type=float, default=0.1, metavar='M',
+    parser.add_argument('--gamma', type=float, default=0.3, metavar='M',
                         help='Learning rate step gamma (default: 0.7)')
-    parser.add_argument('--no-cuda', action='store_true', default=False,
+    parser.add_argument('--no-cuda', action='store_true', default=True,
                         help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
-    parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+    parser.add_argument('--log-interval', type=int, default=20, metavar='N',
                         help='how many batches to wait before logging training status')
     parser.add_argument('--save-model', action='store_true', default=True,
                         help='For Saving the current Model')
@@ -104,11 +106,13 @@ def main():
 
     # model = Net(input_dim=1, hidden_dim=30, layer_dim=1, output_dim=pred_len, dropout_prob=0, device= device).to(device)
     model = HubertForCTC.from_pretrained("facebook/hubert-large-ls960-ft")
+    model = model.to(device)
     processor = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=4e-4)
+    model.freeze_feature_encoder()
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     # weight_decay = 4e-4
 
-    scheduler = StepLR(optimizer, step_size=6, gamma=args.gamma)
+    scheduler = StepLR(optimizer, step_size=15, gamma=args.gamma)
 
     if args.weight:
         if os.path.isfile(args.weight):
@@ -145,8 +149,6 @@ def main():
     tensor_x = torch.Tensor(indices)  # transform to torch tensor
     tensor_y = torch.Tensor(indices)
     train_dataset = TensorDataset(tensor_x, tensor_y)  # create your datset
-
-
     train_loader = DataLoader(train_dataset, **kwargs_train)  # create your dataloader
 
     val_loss_min = np.Inf

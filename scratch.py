@@ -83,7 +83,7 @@ for i in range(epoch):
                 logits = model(**input_values).logits
             predicted_ids = torch.argmax(logits, dim=-1)
             transcription = processor.decode(predicted_ids[0])
-            transcription = transcription.lower()
+            transcription = transcription.Upper()
             target_transcription = drug
 
         # encode labels

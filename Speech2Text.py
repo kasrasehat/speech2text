@@ -26,7 +26,7 @@ class s2t():
         self.model6 = HubertForCTC.from_pretrained("facebook/hubert-large-ls960-ft")
         self.processor6 = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
 
-        myload = torch.load("saved_models/hubert_epoch_15")
+        myload = torch.load("saved_models/hubert_epoch_200")
         try:
             self.model6.load_state_dict(myload['state_dict'])
         except:
