@@ -83,6 +83,7 @@ class prepare_data():
                 n_used_langs = []
 
             #for langu in gtts.lang.tts_langs().keys():
+            #gtts.lang.tts_langs().keys()
             for langu in ['af', 'ar','fr']:
 
                 l = min(len(drug),200)
