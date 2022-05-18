@@ -1,9 +1,9 @@
 
-import numpy as np
+
 import os
 import torch
 import argparse
-import torch.nn.functional as F
+
 from torch.optim.lr_scheduler import StepLR
 from Data_preprocess import prepare_data
 from torch.utils.data import TensorDataset, DataLoader
@@ -13,11 +13,6 @@ import torch
 from sklearn.model_selection import train_test_split
 import numpy as np
 #torch.cuda.empty_cache()
-
-
-# main
-# test data is extracted in this section
-# in this section data normalized with min_max method
 
 def train(args, model, device, train_loader, optimizer, epoch, input_data):
 
