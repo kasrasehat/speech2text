@@ -100,8 +100,9 @@ class prepare_data():
 
                 input_values = self.processor(speech, sampling_rate=_, return_tensors="pt")
                 #with torch.no_grad():
-                    #logits = self.model(**input_values).logits
+                   # logits = self.model(**input_values).logits
                 #predicted_ids = torch.argmax(logits, dim=-1)
+                #print(" ".join(self.processor.tokenizer.convert_ids_to_tokens(predicted_ids[0].tolist())))
                 #transcription = self.processor.decode(predicted_ids[0])
                 #transcription = transcription.upper()
                 target_transcription = drug.upper()
