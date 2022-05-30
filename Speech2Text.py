@@ -3,6 +3,7 @@ import torch
 from transformers import (Wav2Vec2ForCTC, Wav2Vec2Processor, HubertForCTC,
                         Speech2TextProcessor, Speech2TextForConditionalGeneration)
 import pickle
+from torch import nn
 
 class s2t():
 
@@ -15,7 +16,7 @@ class s2t():
         self.processor2 = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-large-960h-lv60-self")
 
         self.model3 = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
-        self.processor3 = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
+        self.processor3 = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
 
         self.model4 = Speech2TextForConditionalGeneration.from_pretrained("facebook/s2t-large-librispeech-asr")
         self.processor4 = Speech2TextProcessor.from_pretrained("facebook/s2t-large-librispeech-asr")
@@ -26,11 +27,17 @@ class s2t():
         self.model6 = HubertForCTC.from_pretrained("facebook/hubert-large-ls960-ft")
         self.processor6 = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
 
-        myload = torch.load("saved_models/hubert_epoch_200")
+        myload = torch.load("saved_models/120layer_loss4.2")
         try:
             self.model6.load_state_dict(myload['state_dict'])
         except:
             self.model6.load_state_dict(myload)
+
+       # myload = torch.load("saved_models/wave2vec2")
+       # try:
+       #     self.model3.load_state_dict(myload['state_dict'])
+       # except:
+       #     self.model3.load_state_dict(myload)
 
 
     def HUBERT(self, speech):
@@ -39,9 +46,10 @@ class s2t():
         with torch.no_grad():
            logits = self.model1(**inputs).logits
 
+        log_probs = nn.functional.log_softmax(logits, dim=-1, dtype=torch.float32).transpose(0, 1)
         predicted_ids = torch.argmax(logits, dim=-1)
         transcription = self.processor1.batch_decode(predicted_ids)
-        return transcription[0]
+        return [transcription[0], log_probs]
 
 
     def Wave2Vec2_Large(self, speech):
@@ -114,9 +122,10 @@ class s2t():
         with torch.no_grad():
            logits = self.model6(**inputs).logits
 
+        log_probs = nn.functional.log_softmax(logits, dim=-1, dtype=torch.float32).transpose(0, 1)
         predicted_ids = torch.argmax(logits, dim=-1)
         transcription = self.processor6.batch_decode(predicted_ids)
-        return transcription[0]
+        return [transcription[0], log_probs]
 
 
 

@@ -18,29 +18,47 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
     model.train()
     model.freeze_feature_encoder()
-    batch_loss = 0
+
     pp = 0
     tot_loss = 0
     for batch_idx, (data, target) in enumerate(train_loader):
 
+        batch_loss = 0
+        p = 0
         for i in data:
 
-            path = 'speech2text/augmented_data/' + str(int(i)) + '.pkl'
+            path = 'speech2text/created_data/' + str(int(i)) + '.pkl'
             with open(path, 'rb') as fp:
                 itemlist = pickle.load(fp)
-            input_values = itemlist[0].to(device)
-            loss = model(**input_values).loss
-            batch_loss += loss
+
+            try:
+                input_values = itemlist[0].to(device)
+                loss = model(**input_values).loss
+                batch_loss += loss
+                del loss
+                del input_values
+            except:
+                del loss
+                del input_values
+                torch.cuda.empty_cache()
 
 
         batch_loss_mean = batch_loss/len(data)
-        optimizer.zero_grad()
-        batch_loss_mean.backward()
-        optimizer.step()
-        tot_loss += batch_loss.item()
-        batch_loss = 0
+        try:
+            optimizer.zero_grad()
+            batch_loss_mean.backward()
+            optimizer.step()
+            tot_loss += batch_loss.item()
+            del batch_loss
+            del batch_loss_mean
+            torch.cuda.empty_cache()
+        except:
+            del batch_loss
+            del batch_loss_mean
+            torch.cuda.empty_cache()
 
-        if batch_idx % args.log_interval == 1 :
+
+        if batch_idx % args.log_interval == 1:
 
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, (batch_idx+1) * len(data), len(train_loader.dataset),
@@ -60,19 +78,21 @@ def evaluation(args, model, device, valid_loader, val_loss_min, epoch):
 
             for i in data:
 
-                path = 'speech2text/augmented_data/' + str(int(i)) + '.pkl'
+                path = 'speech2text/created_data/' + str(int(i)) + '.pkl'
                 with open(path, 'rb') as fp:
                     itemlist = pickle.load(fp)
 
                 input_values = itemlist[0].to(device)
                 loss = model(**input_values).loss
                 val_loss += loss.item()
+                del input_values
+                del loss
 
-
+    torch.cuda.empty_cache()
     val_loss = val_loss/len(valid_loader.dataset)
     print('\nValidation loss: {:.6f}\n'.format(val_loss))
     # save model if validation loss has decreased
-    if val_loss < val_loss_min :
+    if val_loss < val_loss_min:
 
         if args.save_model:
 
@@ -90,15 +110,15 @@ def evaluation(args, model, device, valid_loader, val_loss_min, epoch):
 def main():
     # argparse = argparse.parse_args()
     parser = argparse.ArgumentParser(description='PyTorch speech2text')
-    parser.add_argument('--batch-size', type=int, default=8, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=32, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--valid-batch-size', type=int, default=2000, metavar='N',
+    parser.add_argument('--valid-batch-size', type=int, default=3000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=20, metavar='N',
+    parser.add_argument('--epochs', type=int, default=30, metavar='N',
                         help='number of epochs to train (default: 14)')
-    parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+    parser.add_argument('--lr', type=float, default=0.004, metavar='LR',
                         help='learning rate (default: 1.0)')
-    parser.add_argument('--gamma', type=float, default=0.3, metavar='M',
+    parser.add_argument('--gamma', type=float, default=0.2, metavar='M',
                         help='Learning rate step gamma (default: 0.7)')
     parser.add_argument('--no-cuda', action='store_true', default=True,
                         help='disables CUDA training')
@@ -120,6 +140,8 @@ def main():
 
     device = torch.device("cuda:0" if use_cuda else "cpu")
     print(device)
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.benchmark = True
 
     kwargs_train = {'batch_size': args.batch_size}
     kwargs_train.update({'num_workers': 1,
@@ -134,12 +156,19 @@ def main():
     # model = Net(input_dim=1, hidden_dim=30, layer_dim=1, output_dim=pred_len, dropout_prob=0, device= device).to(device)
     model = HubertForCTC.from_pretrained("facebook/hubert-large-ls960-ft")
     model = model.to(device)
+    for param in model.parameters():
+        param.requires_grad_(False)
+
+    model.config.ctc_loss_reduction = "mean"
+    k = 250
+    for i in range(1,k):
+        list(model.parameters())[-i].requires_grad_(True)
     processor = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
     model.freeze_feature_encoder()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     # weight_decay = 4e-4
 
-    scheduler = StepLR(optimizer, step_size=15, gamma=args.gamma)
+    scheduler = StepLR(optimizer, step_size=10, gamma=args.gamma)
 
     if args.weight:
         if os.path.isfile(args.weight):
@@ -161,11 +190,11 @@ def main():
             except:
                 model.load_state_dict(checkpoint)
 
-    files = os.listdir('speech2text/augmented_data')
-    num_of_files = int(len(files) / 2)
+    files = os.listdir('speech2text/created_data')
+    num_of_files = int(len(files))
     x = [i for i in range(num_of_files)]
     y = [i for i in range(num_of_files)]
-    x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.1, shuffle=True)
+    x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.2, shuffle=True)
 
     tensor_x = torch.Tensor(x_train)  # transform to torch tensor
     tensor_y = torch.Tensor(y_train)
@@ -180,9 +209,9 @@ def main():
 
     val_loss_min = np.Inf
     for epoch in range(1, args.epochs + 1):
+        out_loss = evaluation(args, model, device, valid_loader, val_loss_min, epoch)
         train(args, model, device, train_loader, optimizer, epoch)
         scheduler.step()
-        out_loss = evaluation(args, model, device, valid_loader, val_loss_min, epoch)
         if out_loss is not None:
             val_loss_min = out_loss
 

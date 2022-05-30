@@ -6,6 +6,11 @@ import librosa
 # load model and tokenizer
 processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base-960h")
 model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
+model1 = Wav2Vec2ForCTC.from_pretrained(
+    "facebook/wav2vec2-base",
+    ctc_loss_reduction="mean",
+    pad_token_id=processor.tokenizer.pad_token_id,
+)
 
 # load dummy dataset and read soundfiles
 path = 'voice/ENOXAPARIN.wav'

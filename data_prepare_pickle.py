@@ -3,6 +3,7 @@ import librosa
 import pandas as pd
 import numpy as np
 import pickle
+import torch
 from ast import literal_eval
 import pydub
 import tqdm
@@ -36,8 +37,10 @@ df = pd.DataFrame(columns=['drug'], index=range(q))
 df['drug_codes'] = pd.Series(np.nan, index=df.index)
 df['hubert'] = pd.Series(np.nan, index=df.index)
 df['hubert_codes'] = pd.Series(np.nan, index=df.index)
+df['hubert_log_probs'] = pd.Series(np.nan, index=df.index, dtype='float32')
 df['fine_tuned_hubert'] = pd.Series(np.nan, index=df.index)
 df['fine_tuned_hubert_codes'] = pd.Series(np.nan, index=df.index)
+df['fine_tuned_hubert_log_probs'] = pd.Series(np.nan, index=df.index)
 df['wave2vec_large'] = pd.Series(np.nan, index=df.index)
 df['wave2vec_base'] = pd.Series(np.nan, index=df.index)
 df['s2t_large'] = pd.Series(np.nan, index=df.index)
@@ -59,7 +62,6 @@ for drug in data.keys():
 
             try:
                 speech, _ = librosa.load(path, sr=16000)
-
             except:
                 bug[drug] = j
                 continue
@@ -76,35 +78,39 @@ for drug in data.keys():
             bug[drug] = j
             continue
 
+        path2 = 'speech2text/created_data_log_probs/'+drug+str(j)
         target_transcription = drug.upper()
         df['drug'][i] = target_transcription
         with processor.as_target_processor():
             a = processor(target_transcription, return_tensors="pt").input_ids
 
         df['drug_codes'][i] = str(a.tolist()[0])
-
-        df['hubert'][i] = model.HUBERT(speech)
+        df['hubert'][i] = model.HUBERT(speech)[0]
+        torch.save(model.HUBERT(speech)[1], path2+'hubert_log_probs')
+        df['hubert_log_probs'][i] = path2+'hubert_log_probs'
         with processor.as_target_processor():
             b = processor(df['hubert'][i], return_tensors="pt").input_ids
 
         df['hubert_codes'][i] = str(b.tolist()[0])
 
-        df['fine_tuned_hubert'][i] = model.fine_tuned_HUBERT(speech)
+        df['fine_tuned_hubert'][i] = model.fine_tuned_HUBERT(speech)[0]
+        torch.save(model.fine_tuned_HUBERT(speech)[1], path2 + 'fine_tuned_hubert_log_probs')
+        df['fine_tuned_hubert_log_probs'][i] = path2 + 'fine_tuned_hubert_log_probs'
         with processor.as_target_processor():
             c = processor(df['fine_tuned_hubert'][i], return_tensors="pt").input_ids
 
         df['fine_tuned_hubert_codes'][i] = str(c.tolist()[0])
 
-        df['wave2vec_large'][i] = model.Wave2Vec2_Large(speech)
-        df['wave2vec_base'][i] = model.Wave2Vec2_Base(speech)
-        df['s2t_large'][i] = model.facebook_s2t_large(speech).upper()
-        df['xlsr_multilingual'][i] = model.xlsr_multilingual_56(speech, lang_code='en').upper()
+        ###df['wave2vec_large'][i] = model.Wave2Vec2_Large(speech)
+        ###df['wave2vec_base'][i] = model.Wave2Vec2_Base(speech)
+        ###df['s2t_large'][i] = model.facebook_s2t_large(speech).upper()
+        ###df['xlsr_multilingual'][i] = model.xlsr_multilingual_56(speech, lang_code='en').upper()
         if i % 100 == 0:
-            print('{}% completed'.format(i/q))
+            print('{}% completed'.format(100*i/q))
 
 
 
-df.to_csv('final_file200.csv')
+df.to_csv('fine_tuned_hubert_120layer_loss4.csv')
 
 
 
