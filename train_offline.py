@@ -159,8 +159,8 @@ def main():
     for param in model.parameters():
         param.requires_grad_(False)
 
-    model.config.ctc_loss_reduction = "mean"
-    k = 250
+    #model.config.ctc_loss_reduction = "mean"
+    k = 30
     for i in range(1,k):
         list(model.parameters())[-i].requires_grad_(True)
     processor = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
@@ -198,7 +198,7 @@ def main():
 
     tensor_x = torch.Tensor(x_train)  # transform to torch tensor
     tensor_y = torch.Tensor(y_train)
-    train_dataset = TensorDataset(tensor_x, tensor_y)  # create your datset
+    train_dataset = TensorDataset(tensor_x, tensor_y)  # create your dataset
 
     tensor_x = torch.Tensor(x_valid)  # transform to torch tensor
     tensor_y = torch.Tensor(y_valid)
