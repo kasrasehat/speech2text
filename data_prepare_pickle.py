@@ -110,7 +110,7 @@ for drug in data.keys():
 
 
 
-df.to_csv('fine_tuned_hubert_120layer_loss4.csv')
+df.to_csv('fine_tuned_hubert_30layers_augment_dosage_loss_7.7.csv')
 
 
 

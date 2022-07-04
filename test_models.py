@@ -49,7 +49,7 @@ def compare_ctc_loss(path, dataset):
 
 
 
-data = pd.read_csv('fine_tuned_hubert_120layer_loss4.csv')
+data = pd.read_csv('fine_tuned_hubert_30layers_augment_dosage_loss_7.7.csv')
 data1 = data.copy()
 data['score'] = pd.Series(np.nan, index=data.index, dtype=int)
 data['ctc_loss'] = pd.Series(np.nan, index=data.index, dtype=int)

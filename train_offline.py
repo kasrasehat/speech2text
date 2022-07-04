@@ -12,6 +12,8 @@ from torch.optim.lr_scheduler import StepLR
 import torch
 from sklearn.model_selection import train_test_split
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 #torch.cuda.empty_cache()
 
 def train(args, model, device, train_loader, optimizer, epoch):
@@ -66,7 +68,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
                        tot_loss / ((batch_idx + 1) * len(data))))
 
     print('Epoch: {}\tLoss: {:.6f}'.format(epoch, tot_loss / (len(train_loader.dataset))))
-    return None
+    return tot_loss/(len(train_loader.dataset))
 
 def evaluation(args, model, device, valid_loader, val_loss_min, epoch):
 
@@ -101,22 +103,22 @@ def evaluation(args, model, device, valid_loader, val_loss_min, epoch):
             filename = 'E:/codes_py/speech2text/saved_models/hubert_epoch_{}'.format(epoch)
             torch.save(model.state_dict(),filename)
             val_loss_min = val_loss
-        return val_loss_min
+        return [val_loss_min, val_loss]
 
     else:
-        return None
+        return [None, val_loss]
 
 
 def main():
     # argparse = argparse.parse_args()
     parser = argparse.ArgumentParser(description='PyTorch speech2text')
-    parser.add_argument('--batch-size', type=int, default=32, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
-    parser.add_argument('--valid-batch-size', type=int, default=3000, metavar='N',
+    parser.add_argument('--valid-batch-size', type=int, default=7000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=30, metavar='N',
+    parser.add_argument('--epochs', type=int, default=25, metavar='N',
                         help='number of epochs to train (default: 14)')
-    parser.add_argument('--lr', type=float, default=0.004, metavar='LR',
+    parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                         help='learning rate (default: 1.0)')
     parser.add_argument('--gamma', type=float, default=0.2, metavar='M',
                         help='Learning rate step gamma (default: 0.7)')
@@ -194,7 +196,7 @@ def main():
     num_of_files = int(len(files))
     x = [i for i in range(num_of_files)]
     y = [i for i in range(num_of_files)]
-    x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.2, shuffle=True)
+    x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.15, shuffle=True)
 
     tensor_x = torch.Tensor(x_train)  # transform to torch tensor
     tensor_y = torch.Tensor(y_train)
@@ -208,15 +210,34 @@ def main():
     valid_loader = DataLoader(valid_dataset, **kwargs_val)
 
     val_loss_min = np.Inf
+    tr = []
+    vl = []
     for epoch in range(1, args.epochs + 1):
+
+        train_loss = train(args, model, device, train_loader, optimizer, epoch)
+        tr.append(train_loss)
         out_loss = evaluation(args, model, device, valid_loader, val_loss_min, epoch)
-        train(args, model, device, train_loader, optimizer, epoch)
+        vl.append(out_loss[1])
         scheduler.step()
-        if out_loss is not None:
-            val_loss_min = out_loss
+        if out_loss[0] is not None:
+            val_loss_min = out_loss[0]
+
+    return vl,tr
 
 
 
 if __name__ == '__main__':
-    main()
+    valid_loss, train_loss = main()
+
+    sns.set(style='darkgrid')
+    plt.figure(figsize=(15, 7), dpi=100)
+    plt.title('Train and Validation loss')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.plot(train_loss, color='green', linewidth=1.0)
+    plt.plot(valid_loss, color='red', linewidth=1.0)
+    plt.legend(['Train', 'Valid'], loc='upper left')
+    plt.savefig('loss plot__', dpi='figure', pad_inches=0.1
+       )
+    plt.show()
 
