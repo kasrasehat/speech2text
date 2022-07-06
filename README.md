@@ -15,27 +15,27 @@ There is a class named s2t including speech2text models.
 ### text2speech.py:
 It is used to creat audio files from text.
 
-###create_data_on_hard_disk1.py:
+### create_data_on_hard_disk1.py:
 It is used to generate new audio files from google text2speech algorithm and store them in a file
 
-###train_offline.py:
+### train_offline.py:
 It is used to train hubert model with generated data
 
-###create_original_data.py:
+### create_original_data.py:
 This script is used to create audio files from name of drugs.
 
-###data_augmentation:
+### data_augmentation:
 It is used to augment audio files resulted from create_original_data.py
 
-##Explanation of different methods of classes:
-###self.process:
+## Explanation of different methods of classes:
+### self.process:
 It returns normalized speech data that can be fed to the model.
 
 there is a problem in training hubert model. This is very huge model and 
 it needs huge amount of ram for training and each loss.backwark process occupy a lot 
 of ram. As a result, maybe it is good to use small model for fine tuning. another way used in this repo is train the last layers of the model. till now, best results are derived from training tha last 30 layers of model.
 
-#Definition of built_in function of model:
+# Definition of built_in function of model:
 CTC loss function is used in order to train the weights of the model
 ```python
         loss = None
