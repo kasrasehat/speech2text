@@ -1,15 +1,3 @@
-
-import numpy as np
-import os
-import torch
-import argparse
-import torch.nn.functional as F
-from torch.optim.lr_scheduler import StepLR
-from Data_preprocess import prepare_data
-from torch.utils.data import TensorDataset, DataLoader
-from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC, HubertForCTC
-from torch.optim.lr_scheduler import StepLR
-import torch
 from transformers import Wav2Vec2Processor, HubertForCTC
 import torch
 import librosa
@@ -18,6 +6,8 @@ import pandas as pd
 import pydub
 import numpy as np
 from fuzzywuzzy import fuzz
+import regex as re
+from pydub import AudioSegment
 
 def read(f, normalized=False):
     """MP3 to numpy array"""
@@ -54,7 +44,7 @@ def return_rxnorm(transcript, word2num):
             flag = True
 
     if flag:
-        return transcript.replace(' ' + transcript.split()[-1], '_' + word2num[last_number])
+        return word2num[last_number]
     else:
         return transcript
 
@@ -99,16 +89,58 @@ if __name__ == "__main__":
         model.load_state_dict(myload)
 
     # audio file is decoded on the fly
-    path = 'speech2text/created_combined_data/acetaminophen_325(8).wav'
-    speech, _ = librosa.load(path, sr=16000)
-    #_, speech = read(path, normalized=True)
-    inputs = processor(speech, sampling_rate=_, return_tensors="pt")
+    files = os.listdir('speech2text/Org2')
+    tot = 0
+    q = 0
+    for file in files:
 
-    with torch.no_grad():
-        logits = model(**inputs).logits
+        path = 'speech2text/Org2' + '/' + file
+        if path[-3:] == 'wav':
 
-    predicted_ids = torch.argmax(logits, dim=-1)
-    # transcribe speech
-    transcription = processor.batch_decode(predicted_ids)
-    print(return_rxnorm(transcription[0], word2num))
-    #print(" ".join(processor.tokenizer.convert_ids_to_tokens(predicted_ids[0].tolist())))
+            try:
+                speech1, _ = librosa.load(path, sr=16000)
+            except:
+                pass
+
+        elif path[-3:] == 'mp3':
+
+            try:
+                _, speech1 = read(path, normalized=True)
+                if speech1.shape[1] == 2:
+                    speech1 = np.mean(speech1, axis=1)
+            except:
+                pass
+
+
+        elif path[-3:] == 'm4a':
+
+            try:
+                speech1 = AudioSegment.from_file(path)
+                path2 = path[:-4] + 'aaa.mp3'
+                speech1.export(path2, format="mp3")
+                _, speech1 = read(path2, normalized=True)
+                if speech1.shape[1] == 2:
+                    speech1 = np.mean(speech1, axis=1)
+            except:
+                pass
+
+        else:
+            continue
+
+        label = re.findall('^\d+', file)
+        if label[0] in num2word.keys():
+            tot += 1
+            #_, speech = read(path, normalized=True)
+            inputs = processor(speech1, sampling_rate=_, return_tensors="pt")
+            with torch.no_grad():
+                logits = model(**inputs).logits
+
+            predicted_ids = torch.argmax(logits, dim=-1)
+            # transcribe speech
+            transcription = processor.batch_decode(predicted_ids)
+            output = return_rxnorm(transcription[0], word2num)
+            if output == label[0]:
+                q += 1
+            #print(" ".join(processor.tokenizer.convert_ids_to_tokens(predicted_ids[0].tolist())))
+
+    print(f'accuracy is {q/tot}')
