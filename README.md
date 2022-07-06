@@ -37,6 +37,7 @@ of ram. As a result, maybe it is good to use small model for fine tuning. anothe
 
 #Definition of built_in function of model:
 CTC loss function is used in order to train the weights of the model
+```python
         loss = None
         if labels is not None:
 
@@ -76,4 +77,5 @@ CTC loss function is used in order to train the weights of the model
         return CausalLMOutput(
             loss=loss, logits=logits, hidden_states=outputs.hidden_states, attentions=outputs.attentions
         )
+```
  
