@@ -21,7 +21,7 @@ hidden_states = model(input_values).last_hidden_state
 feature = torch.argmax(hidden_states, dim=-1)
 #print(hidden_states)
 
-path = 'ALPRAZOLAM.wav'
+path = 'voice/ACETAMINOPHEN.wav'
 speech, _ = librosa.load(path, sr = 16000)
 
 # tokenize

@@ -59,7 +59,7 @@ processor = Wav2Vec2Processor.from_pretrained(processor_name)
 path = 'voice/ACETAMINOPHEN.wav'
 speech, _ = librosa.load(path, sr = 16000)
 
-# tokenize
+# tokenize and predict
 features = processor(speech, sampling_rate=16_000,return_tensors="pt", padding=True)  # Batch size 1
 input_values = features.input_values
 attention_mask = features.attention_mask

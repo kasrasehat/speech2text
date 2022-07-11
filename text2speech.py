@@ -5,7 +5,7 @@ import pydub
 import numpy as np
 import os
 
-
+#read mp3 file
 def read(f, normalized=False):
     """MP3 to numpy array"""
     a = pydub.AudioSegment.from_mp3(f)
@@ -18,7 +18,7 @@ def read(f, normalized=False):
     else:
         return a.frame_rate, y
 
-
+#create audio from text and save it
 tts = gtts.gTTS("alPRAZOLAM", lang='af')
 tts.save("voice/ACETAMINOPHEN9.mp3")
 _, speech = read("voice/ACETAMINOPHEN9.mp3", normalized=True)

@@ -8,12 +8,14 @@ import pydub
 import numpy as np
 import torch
 
+#this class is used in train.py in order to prepare data to be fed to model
 class prepare_data():
 
     def __init__(self):
         self.processor = Wav2Vec2Processor.from_pretrained("facebook/hubert-large-ls960-ft")
         self.model = HubertForCTC.from_pretrained("facebook/hubert-large-ls960-ft")
 
+    #read mp3 files
     def read(self, f, normalized=False):
         """MP3 to numpy array"""
         a = pydub.AudioSegment.from_mp3(f)
@@ -36,7 +38,7 @@ class prepare_data():
         x_train = []
         y_train = []
         bug = {}
-        # load audio and train
+        # create audio and extract label codes and save it as dictionary in order to train model
         for drug in data.keys():
 
             l += 1
@@ -66,6 +68,7 @@ class prepare_data():
                     bug[drug] = j
                     continue
 
+
                 input_values = self.processor(speech, sampling_rate=_, return_tensors="pt")
                 #with torch.no_grad():
                 #    logits = self.model(**input_values).logits
@@ -84,6 +87,8 @@ class prepare_data():
 
             #for langu in gtts.lang.tts_langs().keys():
             #gtts.lang.tts_langs().keys()
+
+            #create audio from drug names and
             for langu in ['af', 'ar','fr']:
 
                 l = min(len(drug),200)
